@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vitasdk.h>
-#include "duktape.h"
+#include "../duktape/src/duktape.h"
 
 void execute_js_script(const char *script) {
     duk_context *ctx = duk_create_heap_default();

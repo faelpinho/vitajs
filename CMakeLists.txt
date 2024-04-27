@@ -1,5 +1,15 @@
+cmake_minimum_required(VERSION 3.6)
+
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  if(DEFINED ENV{VITASDK})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
+  else()
+    message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+  endif()
+endif()
+
 # Name of the project
-project(meuhello)
+project(vitajs)
 
 # This line adds Vita helper macros, must go after project definition in order to build Vita specific artifacts (self/vpk).
 include("${VITASDK}/share/vita.cmake" REQUIRED)
@@ -28,13 +38,14 @@ include_directories(
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
     src/main.c
-    duktape/duktape.c
+    duktape/src/duktape.c
 )
 
 # Library to link to (drop the -l prefix). This will mostly be stubs.
 target_link_libraries(${PROJECT_NAME}
     SceDisplay_stub   # used by debugScreenPrintf()
     SceCtrl_stub
+    m
 )
 
 ## Create Vita files
@@ -45,8 +56,7 @@ vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
 vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
     VERSION ${VITA_VERSION}
     NAME ${VITA_APP_NAME}
-    FILE src/res/pacman1.png res/pacman1.png
-          sce_sys/icon0.png sce_sys/icon0.png
+    FILE  sce_sys/icon0.png sce_sys/icon0.png
           sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
           sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
           sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
