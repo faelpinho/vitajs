@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     duk_put_global_string(ctx, "print");
 
     // Executa script
-    const char *js_code = "var x = 10; var y = 'Hello world menó! x =' + x; print(y); 'Hello world menó! Quanto é x?'";
+    const char *js_code = "var x = 10; var y = 'Hello world menó! x =' + x; y";
 
     if (duk_peval_string(ctx, js_code) != 0)
     {
