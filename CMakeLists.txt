@@ -35,7 +35,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 # Add any additional include paths here
 include_directories(
     src/assets
-    duktape
+    quickjs
 )
 
 # Add any additional library paths here
