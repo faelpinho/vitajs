@@ -44,7 +44,7 @@
 #else
 //#include <dlfcn.h>
 //#include <termios.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h>
 #include <sys/wait.h>
 
 #if defined(__APPLE__)

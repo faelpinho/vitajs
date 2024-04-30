@@ -42432,39 +42432,21 @@ static JSValue js___date_clock(JSContext *ctx, JSValueConst this_val,
 
 /* OS dependent. d = argv[0] is in ms from 1970. Return the difference
    between UTC time and local time 'd' in minutes */
-static int getTimezoneOffset(int64_t time) {
-#if defined(_WIN32)
-    /* XXX: TODO */
-    return 0;
-#else
+int getTimezoneOffset(int64_t time) {
     time_t ti;
-    struct tm tm;
+    struct tm *tm_local, *tm_utc;
+    int timezone_offset;
 
     time /= 1000; /* convert to seconds */
-    if (sizeof(time_t) == 4) {
-        /* on 32-bit systems, we need to clamp the time value to the
-           range of `time_t`. This is better than truncating values to
-           32 bits and hopefully provides the same result as 64-bit
-           implementation of localtime_r.
-         */
-        if ((time_t)-1 < 0) {
-            if (time < INT32_MIN) {
-                time = INT32_MIN;
-            } else if (time > INT32_MAX) {
-                time = INT32_MAX;
-            }
-        } else {
-            if (time < 0) {
-                time = 0;
-            } else if (time > UINT32_MAX) {
-                time = UINT32_MAX;
-            }
-        }
-    }
     ti = time;
-    localtime_r(&ti, &tm);
-    return -tm.tm_gmtoff / 60;
-#endif
+    
+    tm_local = localtime(&ti); // Obter hora local
+    tm_utc = gmtime(&ti);      // Obter hora UTC
+
+    timezone_offset = (tm_local->tm_hour - tm_utc->tm_hour) * 60 +
+                      (tm_local->tm_min - tm_utc->tm_min);
+
+    return timezone_offset;
 }
 
 #if 0

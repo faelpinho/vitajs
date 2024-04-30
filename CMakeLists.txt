@@ -29,13 +29,15 @@ set(VITA_VERSION  "01.00")
 
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wall -Wno-int-conversion -DCONFIG_VERSION=\"$(shell cat VERSION)\" -DPATH_MAX=256")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 # Add any additional include paths here
 include_directories(
     src/assets
     quickjs
+
+    #/usr/include/sys
 )
 
 # Add any additional library paths here
@@ -44,7 +46,13 @@ include_directories(
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
     src/main.c
-    duktape/src/duktape.c
+    src/script.c
+    quickjs/cutils.c
+    quickjs/libbf.c
+    quickjs/libregexp.c
+    quickjs/libunicode.c
+    quickjs/quickjs.c
+    quickjs/quickjs-libc.c
     src/common/debugScreen.c
 )
 
@@ -58,6 +66,7 @@ target_link_libraries(${PROJECT_NAME}
     SceAppMgr_stub
     SceCommonDialog_stub
     SceCtrl_stub
+    SceSysmem_stub
     freetype
     png
     jpeg
@@ -65,6 +74,7 @@ target_link_libraries(${PROJECT_NAME}
     z
     c
     m
+    pthread
 )
 
 ## Create Vita files
@@ -77,4 +87,5 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
     NAME ${VITA_APP_NAME}
     FILE  
           src/assets/segoeui.ttf assets/segoeui.ttf
+          src/assets/main.js assets/main.js
 )
