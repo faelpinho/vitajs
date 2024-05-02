@@ -18,7 +18,6 @@ project(${SHORT_NAME})
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 find_package(ZLIB REQUIRED)
-message(STATUS "ZLIB_LIBRARIES: ${ZLIB_LIBRARIES}")
 
 ## Configuration options for this app
 # Display name (under bubble in LiveArea)
@@ -29,15 +28,13 @@ set(VITA_VERSION  "01.00")
 
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wall -Wno-int-conversion -DCONFIG_VERSION=\"$(shell cat VERSION)\" -DPATH_MAX=256")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-all -Wno-int-conversion -DCONFIG_VERSION=\"$(shell cat VERSION)\" -DPATH_MAX=256")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 # Add any additional include paths here
 include_directories(
     src/assets
     quickjs
-
-    #/usr/include/sys
 )
 
 # Add any additional library paths here
@@ -46,7 +43,11 @@ include_directories(
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
     src/main.c
-    src/script.c
+    src/modules/ath_screen.c
+    src/modules/ath_system.c
+    src/ath_env.c
+    src/graphics.c
+    #src/taskman.c
     quickjs/cutils.c
     quickjs/libbf.c
     quickjs/libregexp.c

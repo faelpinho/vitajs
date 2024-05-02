@@ -1,6 +1,8 @@
-#include "script.h"
 #include <psp2/kernel/sysmem.h>
 #include <psp2/appmgr.h>
+#include <string.h>
+
+#include "ath_env.h"
 
 #define TRUE 1
 
@@ -33,8 +35,8 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
     js_init_module_std(ctx, "std");
     js_init_module_os(ctx, "os");
 
-    /*
     athena_system_init(ctx);
+    /*
     athena_archive_init(ctx);
     athena_timer_init(ctx);
     athena_task_init(ctx);
@@ -83,17 +85,36 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
 
 static char error_buf[4096];
 
-const char *runScript(const char *script, bool isBuffer)
+unsigned int isButtonPressed()
+{
+    return ctrl.buttons;
+}
+
+JSModuleDef *athena_push_module(JSContext *ctx, JSModuleInitFunc *func, const JSCFunctionListEntry *func_list, int len, const char *module_name)
+{
+    JSModuleDef *m;
+    m = JS_NewCModule(ctx, module_name, func);
+    if (!m)
+        return NULL;
+    JS_AddModuleExportList(ctx, m, func_list, len);
+
+    printf("AthenaEnv: %s module pushed at 0x%x\n", module_name, m);
+    return m;
+}
+
+const char *runScript(const char *script)
 {
     // size_t memoryLimit = (GetMemorySize() - get_used_memory()) >> 1;
     // size_t memoryLimit = 1024;
 
     printf("\nStarting AthenaEnv...\n");
+
     JSRuntime *rt = JS_NewRuntime();
     if (!rt)
     {
-        return "Runtime creation";
+        return "Runtime creation failed.";
     }
+
     js_std_set_worker_new_context_func(JS_NewCustomContext);
     js_std_init_handlers(rt);
 
@@ -103,7 +124,7 @@ const char *runScript(const char *script, bool isBuffer)
     JSContext *ctx = JS_NewCustomContext(rt);
     if (!ctx)
     {
-        return "Context creation";
+        return "Context creation failed.";
     }
 
     JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
@@ -398,4 +419,14 @@ static int qjs_eval_buf(JSContext *ctx, const void *buf, int buf_len, const char
     }
     JS_FreeValue(ctx, val);
     return ret;
+}
+
+void delay(int timer)
+{
+    sceKernelDelayThread(timer * 1000 * 1000);
+}
+
+void delayMiliseconds(int timer)
+{
+    sceKernelDelayThread(timer * 1000);
 }
