@@ -23,6 +23,9 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename);
 static int qjs_eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags);
 
 unsigned int get_used_memory();
+unsigned int get_free_memory();
+unsigned int get_used_vram();
+unsigned int get_free_vram();
 
 void delay(int timer);
 void delayMiliseconds(int timer);

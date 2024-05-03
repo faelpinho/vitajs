@@ -264,14 +264,44 @@ static JSValue vitajs_getFreeMemory(JSContext *ctx, JSValue this_val, int argc, 
 	if (argc != 0)
 		return JS_ThrowSyntaxError(ctx, "Syntax Error: no arguments expected.");
 
-	size_t result = GetMemorySize();
+	size_t result = get_free_memory();
+
+	return JS_NewUint32(ctx, (uint32_t)(result));
+}
+
+static JSValue vitajs_getUsedMemory(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+{
+	if (argc != 0)
+		return JS_ThrowSyntaxError(ctx, "Syntax Error: no arguments expected.");
+
+	size_t result = get_used_memory();
+
+	return JS_NewUint32(ctx, (uint32_t)(result));
+}
+
+static JSValue vitajs_getFreeVRam(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+{
+	if (argc != 0)
+		return JS_ThrowSyntaxError(ctx, "Syntax Error: no arguments expected.");
+
+	size_t result = get_free_vram();
+
+	return JS_NewUint32(ctx, (uint32_t)(result));
+}
+
+static JSValue vitajs_getUsedVRam(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+{
+	if (argc != 0)
+		return JS_ThrowSyntaxError(ctx, "Syntax Error: no arguments expected.");
+
+	size_t result = get_used_vram();
 
 	return JS_NewUint32(ctx, (uint32_t)(result));
 }
 
 static JSValue vitajs_exit(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	return JS_ThrowInternalError(ctx, "System.exit");
+	return JS_ThrowInternalError(ctx, "System.exit not implemented yet.");
 }
 
 void recursive_mkdir(char *dir)
@@ -311,7 +341,7 @@ static JSValue vitajs_openfile(JSContext *ctx, JSValue this_val, int argc, JSVal
 static JSValue vitajs_readfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 2)
-		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected two (file: , s)");
+		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected two (file: int, size: uint32_t)");
 
 	int file;
 	uint32_t size;
@@ -421,6 +451,7 @@ static JSValue vitajs_loadELF(JSContext *ctx, JSValue this_val, int argc, JSValu
 	return JS_UNDEFINED;
 }
 
+/*
 extern void *_gp;
 
 static volatile off_t progress, max_progress;
@@ -431,7 +462,6 @@ struct pathMap
 	const char *out;
 };
 
-/*
 static int copyThread(void *data)
 {
 	struct pathMap *paths = (struct pathMap *)data;
@@ -461,9 +491,7 @@ static int copyThread(void *data)
 	exitkill_task();
 	return JS_UNDEFINED;
 }
-*/
 
-/*
 static JSValue vitajs_copyasync(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 2)
@@ -477,7 +505,6 @@ static JSValue vitajs_copyasync(JSContext *ctx, JSValue this_val, int argc, JSVa
 	init_task(task, (void *)copypaths);
 	return JS_UNDEFINED;
 }
-*/
 
 static JSValue vitajs_getfileprogress(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
@@ -500,6 +527,7 @@ static JSValue vitajs_gettemps(JSContext *ctx, JSValue this_val, int argc, JSVal
 
 	return JS_UNDEFINED;
 }
+*/
 
 static const JSCFunctionListEntry system_funcs[] = {
 	JS_CFUNC_DEF("openFile", 2, vitajs_openfile),
@@ -516,16 +544,19 @@ static const JSCFunctionListEntry system_funcs[] = {
 	JS_CFUNC_DEF("moveFile", 2, vitajs_movefile),
 	JS_CFUNC_DEF("copyFile", 2, vitajs_copyfile),
 	// JS_CFUNC_DEF("threadCopyFile", 2, vitajs_copyasync),
-	JS_CFUNC_DEF("getFileProgress", 0, vitajs_getfileprogress),
+	// JS_CFUNC_DEF("getFileProgress", 0, vitajs_getfileprogress),
 	JS_CFUNC_DEF("removeFile", 2, vitajs_removeFile),
 	JS_CFUNC_DEF("rename", 2, vitajs_rename),
 	JS_CFUNC_DEF("delay", 1, vitajs_delay),
-	JS_CFUNC_DEF("getFreeMemory", 0, vitajs_getFreeMemory),
+	JS_CFUNC_DEF("get_free_memory", 0, vitajs_getFreeMemory),
+	JS_CFUNC_DEF("get_used_memory", 0, vitajs_getUsedMemory),
+	JS_CFUNC_DEF("get_free_vram", 0, vitajs_getFreeVRam),
+	JS_CFUNC_DEF("get_used_vram", 0, vitajs_getUsedVRam),
 	JS_CFUNC_DEF("exit", 0, vitajs_exit),
 	JS_CFUNC_DEF("loadELF", 3, vitajs_loadELF),
 	// JS_CFUNC_DEF("getCPUInfo", 0, vitajs_getcpuinfo),
 	// JS_CFUNC_DEF("getGPUInfo", 0, vitajs_getgpuinfo),
-	JS_CFUNC_DEF("getTemperature", 0, vitajs_gettemps),
+	// JS_CFUNC_DEF("getTemperature", 0, vitajs_gettemps),
 	JS_PROP_STRING_DEF("boot_path", boot_path, JS_PROP_CONFIGURABLE),
 	JS_PROP_INT32_DEF("FREAD", O_RDONLY, JS_PROP_CONFIGURABLE),
 	JS_PROP_INT32_DEF("FWRITE", O_WRONLY, JS_PROP_CONFIGURABLE),

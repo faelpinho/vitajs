@@ -17,13 +17,31 @@ unsigned int get_used_memory()
     return info.total_user_rw_mem - info.free_user_rw;
 }
 
-// GetMemorySize ( = 536870912?)
-unsigned int GetMemorySize()
+// get_free_memory ( = 536870912?)
+unsigned int get_free_memory()
 {
     SceAppMgrBudgetInfo info;
     info.size = sizeof(SceAppMgrBudgetInfo);
     sceAppMgrGetBudgetInfo(&info);
     return info.total_user_rw_mem;
+}
+
+// get_used_vram
+unsigned int get_used_vram()
+{
+    SceAppMgrBudgetInfo info;
+    info.size = sizeof(SceAppMgrBudgetInfo);
+    sceAppMgrGetBudgetInfo(&info);
+    return info.total_cdram_mem - info.free_cdram_mem;
+}
+
+// get_free_vram ( = 134217728?)
+unsigned int get_free_vram()
+{
+    SceAppMgrBudgetInfo info;
+    info.size = sizeof(SceAppMgrBudgetInfo);
+    sceAppMgrGetBudgetInfo(&info);
+    return info.total_cdram_mem;
 }
 
 static JSContext *JS_NewCustomContext(JSRuntime *rt)
