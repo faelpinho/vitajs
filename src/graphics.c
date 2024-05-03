@@ -181,7 +181,7 @@ void loadFont(const char *fontPath)
 
 void freeFont()
 {
-	void vita2d_free_font(defaultFont);
+	vita2d_free_font(defaultFont);
 }
 
 int printfFontText(float x, float y, float scale, uint32_t color, const char *text)
@@ -264,7 +264,7 @@ float *getRefreshRate()
 	return fps;
 }
 
-void athena_error_screen(const char *errMsg)
+void vitajs_error_screen(const char *errMsg)
 {
 	uint32_t color = RGBA8(0x20, 0x20, 0x20, 0xFF);
 	uint32_t color2 = RGBA8(0xFF, 0xFF, 0xFF, 0xFF);

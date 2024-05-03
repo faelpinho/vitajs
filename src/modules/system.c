@@ -10,7 +10,7 @@
 
 #include "../quickjs/quickjs.h"
 #include "../quickjs/cutils.h"
-#include "../ath_env.h"
+#include "../env.h"
 #include "../system.h"
 #include "../memory.h"
 #include "../taskman.h"
@@ -21,21 +21,21 @@ static char modulePath[256];
 
 static char boot_path[255];
 
-static JSValue athena_getCurrentDirectory(JSContext *ctx)
+static JSValue vitajs_getCurrentDirectory(JSContext *ctx)
 {
 	char path[256];
 	getcwd(path, 256);
 	return JS_NewString(ctx, path);
 }
 
-static JSValue athena_setCurrentDirectory(JSContext *ctx, JSValueConst *argv)
+static JSValue vitajs_setCurrentDirectory(JSContext *ctx, JSValueConst *argv)
 {
 	static char temp_path[256];
 	const char *path = JS_ToCString(ctx, argv[0]);
 	if (!path)
 		return JS_ThrowSyntaxError(ctx, "Argument error: System.currentDirectory(file) takes a filename as string as argument.");
 
-	athena_getCurrentDirectory(ctx);
+	vitajs_getCurrentDirectory(ctx);
 
 	// let's do some normalization.
 	// if absolute path (contains [drive]:path/)
@@ -73,16 +73,16 @@ static JSValue athena_setCurrentDirectory(JSContext *ctx, JSValueConst *argv)
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_curdir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_curdir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc == 0)
-		return athena_getCurrentDirectory(ctx);
+		return vitajs_getCurrentDirectory(ctx);
 	if (argc == 1)
-		return athena_setCurrentDirectory(ctx, argv);
+		return vitajs_setCurrentDirectory(ctx, argv);
 	return JS_ThrowSyntaxError(ctx, "Argument error: System.currentDirectory([file]) takes zero or one argument.");
 }
 
-static JSValue athena_dir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_dir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 
 	if (argc != 0 && argc != 1)
@@ -140,7 +140,7 @@ static JSValue athena_dir(JSContext *ctx, JSValue this_val, int argc, JSValueCon
 	return arr;
 }
 
-static JSValue athena_createDir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_createDir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *path = JS_ToCString(ctx, argv[0]);
 	if (!path)
@@ -150,7 +150,7 @@ static JSValue athena_createDir(JSContext *ctx, JSValue this_val, int argc, JSVa
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_removeDir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_removeDir(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *path = JS_ToCString(ctx, argv[0]);
 	if (!path)
@@ -160,7 +160,7 @@ static JSValue athena_removeDir(JSContext *ctx, JSValue this_val, int argc, JSVa
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_movefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_movefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *path = JS_ToCString(ctx, argv[0]);
 
@@ -192,7 +192,7 @@ static JSValue athena_movefile(JSContext *ctx, JSValue this_val, int argc, JSVal
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_removeFile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_removeFile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *path = JS_ToCString(ctx, argv[0]);
 	if (!path)
@@ -202,7 +202,7 @@ static JSValue athena_removeFile(JSContext *ctx, JSValue this_val, int argc, JSV
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_rename(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_rename(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *oldName = JS_ToCString(ctx, argv[0]);
 	const char *newName = JS_ToCString(ctx, argv[1]);
@@ -216,7 +216,7 @@ static JSValue athena_rename(JSContext *ctx, JSValue this_val, int argc, JSValue
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_copyfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_copyfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	const char *ogfile = JS_ToCString(ctx, argv[0]);
 	const char *newfile = JS_ToCString(ctx, argv[1]);
@@ -246,7 +246,7 @@ static void setModulePath()
 	getcwd(modulePath, 256);
 }
 
-static JSValue athena_delay(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_delay(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "Error: milliseconds expected.");
@@ -259,7 +259,7 @@ static JSValue athena_delay(JSContext *ctx, JSValue this_val, int argc, JSValueC
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_getFreeMemory(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_getFreeMemory(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 0)
 		return JS_ThrowSyntaxError(ctx, "Syntax Error: no arguments expected.");
@@ -269,11 +269,9 @@ static JSValue athena_getFreeMemory(JSContext *ctx, JSValue this_val, int argc, 
 	return JS_NewUint32(ctx, (uint32_t)(result));
 }
 
-static JSValue athena_exit(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_exit(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	if (argc != 0)
-		return JS_ThrowSyntaxError(ctx, "System.exitToBrowser");
-	return JS_UNDEFINED;
+	return JS_ThrowInternalError(ctx, "System.exit");
 }
 
 void recursive_mkdir(char *dir)
@@ -294,7 +292,7 @@ void recursive_mkdir(char *dir)
 	}
 }
 
-static JSValue athena_openfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_openfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 2)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -310,10 +308,10 @@ static JSValue athena_openfile(JSContext *ctx, JSValue this_val, int argc, JSVal
 	return JS_NewInt32(ctx, fd);
 }
 
-static JSValue athena_readfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_readfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 2)
-		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
+		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected two (file: , s)");
 
 	int file;
 	uint32_t size;
@@ -326,7 +324,7 @@ static JSValue athena_readfile(JSContext *ctx, JSValue this_val, int argc, JSVal
 	return JS_NewStringLen(ctx, (const char *)buffer, len);
 }
 
-static JSValue athena_writefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_writefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	int fd;
 	uint32_t size, len;
@@ -338,7 +336,7 @@ static JSValue athena_writefile(JSContext *ctx, JSValue this_val, int argc, JSVa
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_closefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_closefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -348,7 +346,7 @@ static JSValue athena_closefile(JSContext *ctx, JSValue this_val, int argc, JSVa
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_seekfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_seekfile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 3)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -364,7 +362,7 @@ static JSValue athena_seekfile(JSContext *ctx, JSValue this_val, int argc, JSVal
 	return JS_UNDEFINED;
 }
 
-static JSValue athena_sizefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_sizefile(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -376,7 +374,7 @@ static JSValue athena_sizefile(JSContext *ctx, JSValue this_val, int argc, JSVal
 	return JS_NewUint32(ctx, size);
 }
 
-static JSValue athena_checkexist(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_checkexist(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -388,7 +386,7 @@ static JSValue athena_checkexist(JSContext *ctx, JSValue this_val, int argc, JSV
 	return JS_NewBool(ctx, true);
 }
 
-static JSValue athena_loadELF(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_loadELF(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	JSValue val;
 	int n = 0;
@@ -466,7 +464,7 @@ static int copyThread(void *data)
 */
 
 /*
-static JSValue athena_copyasync(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_copyasync(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 2)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -481,7 +479,7 @@ static JSValue athena_copyasync(JSContext *ctx, JSValue this_val, int argc, JSVa
 }
 */
 
-static JSValue athena_getfileprogress(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_getfileprogress(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	if (argc != 0)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
@@ -494,7 +492,7 @@ static JSValue athena_getfileprogress(JSContext *ctx, JSValue this_val, int argc
 	return obj;
 }
 
-static JSValue athena_gettemps(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
+static JSValue vitajs_gettemps(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
 	int result; // usar ksceSysconGetTemperatureLog(&result) ?
 
@@ -504,30 +502,30 @@ static JSValue athena_gettemps(JSContext *ctx, JSValue this_val, int argc, JSVal
 }
 
 static const JSCFunctionListEntry system_funcs[] = {
-	JS_CFUNC_DEF("openFile", 2, athena_openfile),
-	JS_CFUNC_DEF("readFile", 2, athena_readfile),
-	JS_CFUNC_DEF("writeFile", 3, athena_writefile),
-	JS_CFUNC_DEF("closeFile", 1, athena_closefile),
-	JS_CFUNC_DEF("seekFile", 3, athena_seekfile),
-	JS_CFUNC_DEF("sizeFile", 1, athena_sizefile),
-	JS_CFUNC_DEF("doesFileExist", 1, athena_checkexist),
-	JS_CFUNC_DEF("currentDir", 1, athena_curdir),
-	JS_CFUNC_DEF("listDir", 1, athena_dir),
-	JS_CFUNC_DEF("createDirectory", 1, athena_createDir),
-	JS_CFUNC_DEF("removeDirectory", 1, athena_removeDir),
-	JS_CFUNC_DEF("moveFile", 2, athena_movefile),
-	JS_CFUNC_DEF("copyFile", 2, athena_copyfile),
-	// JS_CFUNC_DEF("threadCopyFile", 2, athena_copyasync),
-	JS_CFUNC_DEF("getFileProgress", 0, athena_getfileprogress),
-	JS_CFUNC_DEF("removeFile", 2, athena_removeFile),
-	JS_CFUNC_DEF("rename", 2, athena_rename),
-	JS_CFUNC_DEF("delay", 1, athena_delay),
-	JS_CFUNC_DEF("getFreeMemory", 0, athena_getFreeMemory),
-	JS_CFUNC_DEF("exitToBrowser", 0, athena_exit),
-	JS_CFUNC_DEF("loadELF", 3, athena_loadELF),
-	// JS_CFUNC_DEF("getCPUInfo", 0, athena_getcpuinfo),
-	// JS_CFUNC_DEF("getGPUInfo", 0, athena_getgpuinfo),
-	JS_CFUNC_DEF("getTemperature", 0, athena_gettemps),
+	JS_CFUNC_DEF("openFile", 2, vitajs_openfile),
+	JS_CFUNC_DEF("readFile", 2, vitajs_readfile),
+	JS_CFUNC_DEF("writeFile", 3, vitajs_writefile),
+	JS_CFUNC_DEF("closeFile", 1, vitajs_closefile),
+	JS_CFUNC_DEF("seekFile", 3, vitajs_seekfile),
+	JS_CFUNC_DEF("sizeFile", 1, vitajs_sizefile),
+	JS_CFUNC_DEF("doesFileExist", 1, vitajs_checkexist),
+	JS_CFUNC_DEF("currentDir", 1, vitajs_curdir),
+	JS_CFUNC_DEF("listDir", 1, vitajs_dir),
+	JS_CFUNC_DEF("createDirectory", 1, vitajs_createDir),
+	JS_CFUNC_DEF("removeDirectory", 1, vitajs_removeDir),
+	JS_CFUNC_DEF("moveFile", 2, vitajs_movefile),
+	JS_CFUNC_DEF("copyFile", 2, vitajs_copyfile),
+	// JS_CFUNC_DEF("threadCopyFile", 2, vitajs_copyasync),
+	JS_CFUNC_DEF("getFileProgress", 0, vitajs_getfileprogress),
+	JS_CFUNC_DEF("removeFile", 2, vitajs_removeFile),
+	JS_CFUNC_DEF("rename", 2, vitajs_rename),
+	JS_CFUNC_DEF("delay", 1, vitajs_delay),
+	JS_CFUNC_DEF("getFreeMemory", 0, vitajs_getFreeMemory),
+	JS_CFUNC_DEF("exit", 0, vitajs_exit),
+	JS_CFUNC_DEF("loadELF", 3, vitajs_loadELF),
+	// JS_CFUNC_DEF("getCPUInfo", 0, vitajs_getcpuinfo),
+	// JS_CFUNC_DEF("getGPUInfo", 0, vitajs_getgpuinfo),
+	JS_CFUNC_DEF("getTemperature", 0, vitajs_gettemps),
 	JS_PROP_STRING_DEF("boot_path", boot_path, JS_PROP_CONFIGURABLE),
 	JS_PROP_INT32_DEF("FREAD", O_RDONLY, JS_PROP_CONFIGURABLE),
 	JS_PROP_INT32_DEF("FWRITE", O_WRONLY, JS_PROP_CONFIGURABLE),
@@ -545,6 +543,7 @@ static const JSCFunctionListEntry sif_funcs[] = {
 	// JS_PROP_INT32_DEF("pads", PADS_MODULE, JS_PROP_CONFIGURABLE),
 	// JS_PROP_INT32_DEF("audio", AUDIO_MODULE, JS_PROP_CONFIGURABLE),
 	// JS_PROP_INT32_DEF("camera", CAMERA_MODULE, JS_PROP_CONFIGURABLE),
+
 };
 
 static int system_init(JSContext *ctx, JSModuleDef *m)
@@ -557,9 +556,8 @@ static int sif_init(JSContext *ctx, JSModuleDef *m)
 	return JS_SetModuleExportList(ctx, m, sif_funcs, countof(sif_funcs));
 }
 
-JSModuleDef *athena_system_init(JSContext *ctx)
+JSModuleDef *vitajs_system_init(JSContext *ctx)
 {
 	setModulePath();
-	athena_push_module(ctx, system_init, system_funcs, countof(system_funcs), "System");
-	return athena_push_module(ctx, sif_init, sif_funcs, countof(sif_funcs), "IOP");
+	return vitajs_push_module(ctx, system_init, system_funcs, countof(system_funcs), "System");
 }

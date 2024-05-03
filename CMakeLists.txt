@@ -43,9 +43,10 @@ include_directories(
 # Add all the files needed to compile here
 add_executable(${PROJECT_NAME}
     src/main.c
-    src/modules/ath_screen.c
-    src/modules/ath_system.c
-    src/ath_env.c
+    src/modules/screen.c
+    src/modules/system.c
+    src/modules/pads.c
+    src/env.c
     src/graphics.c
     #src/taskman.c
     quickjs/cutils.c

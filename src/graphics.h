@@ -6,10 +6,10 @@
 
 static vita2d_font *defaultFont = NULL;
 
-#define R(color) ((u8)(color & 0xFF))
-#define G(color) ((u8)(color >> 8 & 0xFF))
-#define B(color) ((u8)(color >> 16 & 0xFF))
-#define A(color) ((u8)(color >> 24 & 0xFF))
+#define R(color) (color & 0xFF)
+#define G(color) (color >> 8 & 0xFF)
+#define B(color) (color >> 16 & 0xFF)
+#define A(color) (color >> 24 & 0xFF)
 
 vita2d_texture *load_png(const char *path);
 vita2d_texture *load_bmp(const char *path);
@@ -50,6 +50,6 @@ void end_graphics();
 void swap_buffers();
 void waitVblankStart();
 
-void athena_error_screen(const char *errMsg);
+void vitajs_error_screen(const char *errMsg);
 
 #endif
