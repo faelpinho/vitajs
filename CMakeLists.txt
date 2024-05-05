@@ -69,6 +69,7 @@ target_link_libraries(${PROJECT_NAME}
     SceCommonDialog_stub
     SceCtrl_stub
     SceSysmem_stub
+    ScePvf_stub
     freetype
     png
     jpeg
@@ -90,4 +91,9 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
     FILE  
           src/assets/segoeui.ttf assets/segoeui.ttf
           src/assets/main.js assets/main.js
+          src/assets/test1.png assets/test1.png
+          sce_sys/icon0.png sce_sys/icon0.png
+          sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+          sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+          sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
 )

@@ -55,17 +55,13 @@ static JSValue vitajs_rumble(JSContext *ctx, JSValue this_val, int argc, JSValue
 
 static JSValue vitajs_check(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	int pad, button;
-	JSValue val;
+	uint32_t button = 0;
 
-	val = JS_GetPropertyStr(ctx, argv[0], "btns");
-	JS_ToUint32(ctx, &pad, val);
+	sceCtrlPeekBufferPositiveExt(0, &ctrl, 1);
+	JS_ToUint32(ctx, &button, argv[0]);
 
-	JS_ToInt32(ctx, &button, argv[1]);
-
-	JS_FreeValue(ctx, val);
-
-	return JS_NewBool(ctx, (pad & button));
+	// printf("check btn: %i | ctrl.buttons: %i | button: %i\n", (ctrl.buttons & button), ctrl.buttons, button);
+	return JS_NewBool(ctx, (ctrl.buttons & button));
 }
 
 static JSValue vitajs_get_battery_info(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
@@ -86,7 +82,7 @@ static JSValue vitajs_get_battery_info(JSContext *ctx, JSValue this_val, int arg
 
 static const JSCFunctionListEntry module_funcs[] = {
 	JS_CFUNC_DEF("analog", 1, vitajs_getanalog),
-	JS_CFUNC_DEF("check", 2, vitajs_check),
+	JS_CFUNC_DEF("check", 1, vitajs_check),
 	JS_CFUNC_DEF("rumble", 3, vitajs_rumble),
 	JS_CFUNC_DEF("battery_info", 0, vitajs_get_battery_info),
 	JS_PROP_INT32_DEF("SELECT", SCE_CTRL_SELECT, JS_PROP_CONFIGURABLE),

@@ -301,7 +301,7 @@ static JSValue vitajs_getUsedVRam(JSContext *ctx, JSValue this_val, int argc, JS
 
 static JSValue vitajs_exit(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	return JS_ThrowInternalError(ctx, "System.exit not implemented yet.");
+	return JS_ThrowInternalError(ctx, "System.exit");
 }
 
 void recursive_mkdir(char *dir)
@@ -396,6 +396,7 @@ static JSValue vitajs_sizefile(JSContext *ctx, JSValue this_val, int argc, JSVal
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
+
 	int fd;
 	JS_ToInt32(ctx, &fd, argv[0]);
 	uint32_t cur_off = lseek(fd, 0, SEEK_CUR);
@@ -408,10 +409,13 @@ static JSValue vitajs_checkexist(JSContext *ctx, JSValue this_val, int argc, JSV
 {
 	if (argc != 1)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments");
+
 	const char *file_tbo = JS_ToCString(ctx, argv[0]);
 	int fd = open(file_tbo, O_RDONLY, 0777);
+
 	if (fd < 0)
 		return JS_NewBool(ctx, false);
+
 	close(fd);
 	return JS_NewBool(ctx, true);
 }

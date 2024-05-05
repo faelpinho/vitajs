@@ -195,7 +195,6 @@ static int qjs_handle_file(JSContext *ctx, const char *filename)
     return retval;
 }
 
-// NOVO
 static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
 {
     char *buf = NULL;
@@ -248,11 +247,13 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
         "import * as os from 'os';\n"
         "import * as System from 'System';\n"
         "import * as Screen from 'Screen';\n"
+        "import * as Pads from 'Pads';\n"
 
         "globalThis.std = std;\n"
         "globalThis.os = os;\n"
         "globalThis.System = System;\n"
-        "globalThis.Screen = Screen;\n";
+        "globalThis.Screen = Screen;\n"
+        "globalThis.Pads = Pads;\n";
 
     rc = qjs_eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
 

@@ -14,7 +14,7 @@
 
 int main(int argc, char *argv[])
 {
-    init_graphics();
+    vita2d_init();
     printf("graphics initialized.");
 
     loadFont("app0:/assets/segoeui.ttf");
@@ -31,10 +31,21 @@ int main(int argc, char *argv[])
 
     printf("VitaJS starting...");
 
+    /*
     do
     {
         errMsg = runScript("app0:/assets/main.js");
+        printf('\nerrMsg: ', errMsg);
     } while (errMsg != NULL);
+    */
+
+    errMsg = runScript("app0:/assets/main.js");
+
+    if (strcmp(errMsg, "System.exit") != NULL) // strcmp = texto exato. strstr = qualquer parte que contenha.
+    {
+        printf('System.exit\n');
+        return 0;
+    }
 
     start_drawing();
 
@@ -44,13 +55,17 @@ int main(int argc, char *argv[])
 
     printf("while start is not pressed...");
 
-    while (ctrl.buttons != SCE_CTRL_START)
+    while (ctrl.buttons == SCE_CTRL_START)
     {
-        return -1;
+        sceCtrlPeekBufferPositive(0, &ctrl, 1);
+        printf('loop\n');
     }
 
+    printf('Finalizado.');
+    delay(5);
+
     freeFont();
-    end_graphics();
+    vita2d_fini();
 
     return 0;
 }
