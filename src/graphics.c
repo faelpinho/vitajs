@@ -13,8 +13,6 @@
 
 #include "graphics.h"
 
-#define PI 3.14159265359
-
 // 2D drawing functions
 void init_graphics()
 {

@@ -38,6 +38,8 @@ let interval = os.setInterval(() => {
     if (pads.check(pads.START) || pads.check(pads.POWER)) {
         console.log('Closing app...\n'); // show the message on stdout.
 
+        Screen.free_texture(texture1);
+
         os.clearInterval(interval); // it closes the app.
     }
 }, 0);
