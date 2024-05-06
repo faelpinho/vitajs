@@ -145,8 +145,6 @@ const char *runScript(const char *script)
 
     int s = qjs_handle_file(ctx, script);
 
-    printf("qjs_handle_file loaded.");
-
     js_std_loop(ctx);
 
     if (s < 0)
@@ -179,14 +177,14 @@ const char *runScript(const char *script)
 static int qjs_handle_file(JSContext *ctx, const char *filename)
 {
     SceUID *f = NULL;
-    int retval;
+    int retval = -1;
 
     f = sceIoOpen(filename, SCE_O_RDONLY, 0777);
     if (!f)
     {
         fprintf(stderr, "failed to open source file: %s\n", filename);
         fflush(stderr);
-        return -1;
+        return retval;
     }
 
     retval = qjs_handle_fh(ctx, f, filename);
@@ -197,6 +195,7 @@ static int qjs_handle_file(JSContext *ctx, const char *filename)
 
 static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
 {
+    printf("qjs_handle_fh: iniciado\n");
     char *buf = NULL;
     size_t bufsz = 1024;
     size_t bufoff = 0;
@@ -207,6 +206,11 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
 
     if (!buf)
     {
+        if (buf)
+        {
+            free(buf);
+            buf = NULL;
+        }
         return retval;
     }
 
@@ -216,29 +220,47 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
 
         if (avail < 1024)
         {
-            bufsz += 1024;
-            char *buf_new = (char *)realloc(buf, bufsz);
+            printf("qjs_handle_fh: if avail < 1024 = %i\n", avail);
 
-            if (!buf_new)
+            size_t newsz = bufsz + (bufsz >> 2) + 1024; /* +25% and some extra */
+            char *buf_new;
+
+            if (newsz < bufsz)
             {
-                free(buf);
+                if (buf)
+                {
+                    free(buf);
+                    buf = NULL;
+                }
                 return retval;
             }
-
+            buf_new = (char *)realloc(buf, newsz);
+            if (!buf_new)
+            {
+                if (buf)
+                {
+                    free(buf);
+                    buf = NULL;
+                }
+                return retval;
+            }
             buf = buf_new;
+            bufsz = newsz;
         }
 
+        avail = bufsz - bufoff;
+
         size_t got = sceIoRead(f, (void *)(buf + bufoff), avail);
+        // size_t got = fread((void *)(buf + bufoff), (size_t)1, avail, f);
 
         if (got == 0)
         {
             break;
         }
-
         bufoff += got;
     }
 
-    buf[bufoff++] = '\0';
+    buf[bufoff++] = 0;
 
     js_std_add_helpers(ctx, 0, NULL);
 
@@ -263,7 +285,7 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
         return retval;
     }
 
-    rc = qjs_eval_buf(ctx, (void *)buf, bufoff - 1, filename, JS_EVAL_TYPE_MODULE);
+    rc = qjs_eval_buf(ctx, buf, bufoff - 1, filename, JS_EVAL_TYPE_MODULE);
 
     free(buf);
 
@@ -284,10 +306,8 @@ static int qjs_eval_buf(JSContext *ctx, const void *buf, int buf_len, const char
 
     if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE)
     {
-        /* for the modules, we compile then run to be able to set
-           import.meta */
-        val = JS_Eval(ctx, buf, buf_len, filename,
-                      eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+        /* for the modules, we compile then run to be able to set import.meta */
+        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val))
         {
             js_module_set_import_meta(ctx, val, TRUE, TRUE);
