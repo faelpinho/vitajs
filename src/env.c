@@ -63,44 +63,11 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
     vitajs_archive_init(ctx);
     vitajs_timer_init(ctx);
     vitajs_task_init(ctx);
-    */
-
-#ifdef VITAJS_AUDIO
     vitajs_sound_init(ctx);
-#endif
-
-#ifdef VITAJS_GRAPHICS
-    vitajs_color_init(ctx);
-    vitajs_image_init(ctx);
-    vitajs_imagelist_init(ctx);
     vitajs_font_init(ctx);
-    vitajs_shape_init(ctx);
-    vitajs_screen_init(ctx);
-    vitajs_render_init(ctx);
-#else
-#ifdef VITAJS_CLI
-    vitajs_console_init(ctx);
-#endif
-#endif
-
-#ifdef VITAJS_KEYBOARD
-    vitajs_keyboard_init(ctx);
-#endif
-
-#ifdef VITAJS_MOUSE
-    vitajs_mouse_init(ctx);
-#endif
-
-#ifdef VITAJS_CAMERA
     vitajs_camera_init(ctx);
-#endif
-
-#ifdef VITAJS_NETWORK
     vitajs_network_init(ctx);
-    vitajs_request_init(ctx);
-    vitajs_socket_init(ctx);
-    vitajs_ws_init(ctx);
-#endif
+    */
 
     return ctx;
 }
@@ -128,18 +95,14 @@ const char *runScript(const char *script)
 {
     JSRuntime *rt = JS_NewRuntime();
     if (!rt)
-    {
         return "Runtime creation failed.";
-    }
 
     js_std_set_worker_new_context_func(JS_NewCustomContext);
     js_std_init_handlers(rt);
 
     JSContext *ctx = JS_NewCustomContext(rt);
     if (!ctx)
-    {
         return "Context creation failed.";
-    }
 
     JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
 
@@ -251,7 +214,6 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
         avail = bufsz - bufoff;
 
         size_t got = sceIoRead(f, (void *)(buf + bufoff), avail);
-        // size_t got = fread((void *)(buf + bufoff), (size_t)1, avail, f);
 
         if (got == 0)
         {
@@ -285,7 +247,7 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
         return retval;
     }
 
-    rc = qjs_eval_buf(ctx, buf, bufoff - 1, filename, JS_EVAL_TYPE_MODULE);
+    rc = qjs_eval_buf(ctx, (void *)buf, bufoff - 1, filename, JS_EVAL_TYPE_MODULE);
 
     free(buf);
 

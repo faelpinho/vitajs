@@ -25,9 +25,9 @@ let interval = os.setInterval(() => {
         x += steps;
 
     Screen.start_drawing()
-    Screen.clear(50, 50, 50) // rgba
+    Screen.clear(0, 0, 0, 0) // rgba
 
-    Screen.print(`Hello world menó! inc = ${inc++}`) // color is hardcoded!!
+    //Font.print(font, `Hello world menó! inc = ${inc++}`, 50, 50, 20) // font, str, x, y, sz, r, g, b, a.
 
     Screen.draw_texture(texture1, x, y)
 
@@ -37,8 +37,6 @@ let interval = os.setInterval(() => {
 
     if (pads.check(pads.START) || pads.check(pads.POWER)) {
         console.log('Closing app...\n'); // show the message on stdout.
-
-        Screen.free_texture(texture1);
 
         os.clearInterval(interval); // it closes the app.
     }

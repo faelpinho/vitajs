@@ -20,54 +20,46 @@ typedef struct TextureData
 } TextureData;
 
 static TextureData textures[MAX_TEXTURES];
+static int numTextures = 0;
 
 SceGxmContext *gmxContext = NULL;
 
-bool is_invalid_texture(TextureData *texture)
+int new_texture(vita2d_texture *texture)
 {
-	return (texture->id == -1 && !texture->texture);
+	if (numTextures >= MAX_TEXTURES)
+		return -1;
+
+	int textureId = numTextures++;
+	printf("new_texture(): created texture id %i.\n", textureId);
+	textures[textureId].id = textureId;
+	textures[textureId].texture = texture;
+
+	return textureId;
 }
 
-static int new_texture(const vita2d_texture *texture)
+TextureData get_texture(int textureId)
 {
-	int id = -1;
+	TextureData textureData;
+	textureData.id = -1;
+	textureData.texture = NULL;
 
-	for (int i = 0; i < MAX_TEXTURES; i++)
-	{
-		if (is_invalid_texture(&textures[i]))
-		{
-			textures[i].id = i;
-			textures[i].texture = texture;
-			id = i;
-			break;
-		}
-	}
+	if (textureId < 0 || textureId >= numTextures)
+		return textureData;
 
-	return id;
-}
-
-static TextureData get_texture_data(int textureId)
-{
 	return textures[textureId];
 }
 
-static int del_texture(int textureId)
+int del_texture(int textureId)
 {
-	int ret = -1;
+	if (textureId < 0 || textureId >= numTextures)
+		return -1;
 
-	for (int i = 0; i < MAX_TEXTURES; i++)
-	{
-		if (textures[i].id == textureId)
-		{
-			vita2d_free_texture(textures[i].texture);
-			textures[i].id = -1;
-			textures[i].texture = NULL;
-			ret = 0;
-			break;
-		}
-	}
+	printf("del_texture(): free texture id %i.\n", textureId);
+	vita2d_free_texture(textures[textureId].texture);
+	textures[textureId].id = -1;
+	textures[textureId].texture = NULL;
 
-	return ret;
+	return 0;
 }
 
 static JSValue vitajs_clear(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
@@ -140,11 +132,32 @@ static JSValue vitajs_wait_vblank_start(JSContext *ctx, JSValue this_val, int ar
 
 static JSValue vitajs_print(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	const char *str;
-	if (argc == 1)
-		str = JS_ToCStringLen2(ctx, NULL, argv[0], 0);
+	if (argc < 2)
+		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected at least two (textureId: number, str: string, x, y, size, r, g, b, a: number)");
 
-	printfFontText(50, 50, 20, RGBA8(0, 255, 0, 255), str);
+	const char *str;
+	uint32_t x = 10, y = 10, s = 20, r = 200, g, b, a;
+	int textureId = 0;
+
+	JS_ToUint32(ctx, textureId, argv[0]);
+	str = JS_ToCStringLen2(ctx, NULL, argv[1], 0);
+	JS_ToUint32(ctx, x, argv[2]);
+	JS_ToUint32(ctx, y, argv[3]);
+	JS_ToUint32(ctx, s, argv[4]);
+	JS_ToUint32(ctx, r, argv[5]);
+	JS_ToUint32(ctx, g, argv[6]);
+	JS_ToUint32(ctx, b, argv[7]);
+	JS_ToUint32(ctx, a, argv[8]);
+
+	if (textureId < 0 || textureId >= numTextures)
+		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
+
+	TextureData textureData = get_texture(textureId);
+
+	if (!textureData.texture)
+		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureData.id);
+
+	vita2d_font_draw_text(textureData.texture, x, y, RGBA8(r, g, b, a), s, str);
 	return JS_UNDEFINED;
 }
 
@@ -445,11 +458,10 @@ static JSValue vitajs_free_texture(JSContext *ctx, JSValue this_val, int argc, J
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected one (textureId: number)");
 
 	int textureId = 0;
-
 	JS_ToUint32(ctx, &textureId, argv[0]);
-	JS_FreeValue(ctx, argv[0]);
+	// JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
 	if (del_texture(textureId) < 0)
@@ -468,10 +480,10 @@ static JSValue vitajs_texture_get_width(JSContext *ctx, JSValue this_val, int ar
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	unsigned int width = vita2d_texture_get_width(textures[textureId].texture);
@@ -488,10 +500,10 @@ static JSValue vitajs_texture_get_height(JSContext *ctx, JSValue this_val, int a
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	unsigned int height = vita2d_texture_get_height(textures[textureId].texture);
@@ -508,10 +520,10 @@ static JSValue vitajs_texture_get_stride(JSContext *ctx, JSValue this_val, int a
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	unsigned int stride = vita2d_texture_get_stride(textures[textureId].texture);
@@ -528,10 +540,10 @@ static JSValue vitajs_texture_get_format(JSContext *ctx, JSValue this_val, int a
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	SceGxmTextureFormat format = vita2d_texture_get_format(textures[textureId].texture);
@@ -548,10 +560,10 @@ static JSValue vitajs_texture_get_datap(JSContext *ctx, JSValue this_val, int ar
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	void *data = vita2d_texture_get_datap(textures[textureId].texture);
@@ -572,10 +584,10 @@ static JSValue vitajs_texture_get_palette(JSContext *ctx, JSValue this_val, int 
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	void *data = vita2d_texture_get_palette(textures[textureId].texture);
@@ -596,10 +608,10 @@ static JSValue vitajs_texture_get_min_filter(JSContext *ctx, JSValue this_val, i
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	SceGxmTextureFilter min_filter = vita2d_texture_get_min_filter(textures[textureId].texture);
@@ -616,10 +628,10 @@ static JSValue vitajs_texture_get_mag_filter(JSContext *ctx, JSValue this_val, i
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	SceGxmTextureFilter mag_filter = vita2d_texture_get_mag_filter(textures[textureId].texture);
@@ -636,10 +648,10 @@ static JSValue vitajs_texture_set_filters(JSContext *ctx, JSValue this_val, int 
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	uint32_t min_filter, mag_filter;
@@ -660,10 +672,10 @@ static JSValue vitajs_draw_texture(JSContext *ctx, JSValue this_val, int argc, J
 	JS_ToUint32(ctx, &textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	TextureData textureData = get_texture_data(textureId);
+	TextureData textureData = get_texture(textureId);
 	if (!textureData.texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
@@ -690,10 +702,10 @@ static JSValue vitajs_draw_texture_rotate(JSContext *ctx, JSValue this_val, int 
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, rad;
@@ -719,10 +731,10 @@ static JSValue vitajs_draw_texture_tint_rotate_hotspot(JSContext *ctx, JSValue t
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, rad, center_x, center_y;
@@ -755,10 +767,10 @@ static JSValue vitajs_draw_texture_tint_scale(JSContext *ctx, JSValue this_val, 
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, x_scale, y_scale;
@@ -789,10 +801,10 @@ static JSValue vitajs_draw_texture_tint_part(JSContext *ctx, JSValue this_val, i
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, tex_x, tex_y, tex_w, tex_h;
@@ -827,10 +839,10 @@ static JSValue vitajs_draw_texture_tint_part_scale(JSContext *ctx, JSValue this_
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale;
@@ -869,10 +881,10 @@ static JSValue vitajs_draw_texture_tint_scale_rotate_hotspot(JSContext *ctx, JSV
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, x_scale, y_scale, rad, center_x, center_y;
@@ -909,10 +921,10 @@ static JSValue vitajs_draw_texture_tint_scale_rotate(JSContext *ctx, JSValue thi
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, x_scale, y_scale, rad;
@@ -945,10 +957,10 @@ static JSValue vitajs_draw_texture_part_tint_scale_rotate(JSContext *ctx, JSValu
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale, rad;
@@ -989,10 +1001,10 @@ static JSValue vitajs_draw_array_textured(JSContext *ctx, JSValue this_val, int 
 	JS_ToUint32(ctx, textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
 
-	if (textureId < 0 || textureId > MAX_TEXTURES)
+	if (textureId < 0 || textureId >= numTextures)
 		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
 
-	if (!get_texture_data(textureId).texture)
+	if (!get_texture(textureId).texture)
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	uint32_t mode;

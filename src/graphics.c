@@ -12,6 +12,7 @@
 #include <vita2d.h>
 
 #include "graphics.h"
+#include "env.h"
 
 // 2D drawing functions
 void init_graphics()
@@ -87,90 +88,6 @@ vita2d_texture *load_jpeg(const char *path)
 {
 	return vita2d_load_JPEG_file(path);
 }
-
-/*
-TODO: PARA IMPLEMENTAR
-
-void vita2d_set_region_clip(SceGxmRegionClipMode mode, unsigned int x_min, unsigned int y_min, unsigned int x_max, unsigned int y_max);
-void vita2d_enable_clipping();
-void vita2d_disable_clipping();
-int vita2d_get_clipping_enabled();
-void vita2d_set_clip_rectangle(int x_min, int y_min, int x_max, int y_max);
-void vita2d_get_clip_rectangle(int *x_min, int *y_min, int *x_max, int *y_max);
-void vita2d_set_blend_mode_add(int enable);
-
-void *vita2d_pool_malloc(unsigned int size);
-void *vita2d_pool_memalign(unsigned int size, unsigned int alignment);
-unsigned int vita2d_pool_free_space();
-void vita2d_pool_reset();
-
-void vita2d_draw_array(SceGxmPrimitiveType mode, const vita2d_color_vertex *vertices, size_t count);
-
-void vita2d_texture_set_alloc_memblock_type(SceKernelMemBlockType type);
-SceKernelMemBlockType vita2d_texture_get_alloc_memblock_type();
-vita2d_texture *vita2d_create_empty_texture(unsigned int w, unsigned int h);
-vita2d_texture *vita2d_create_empty_texture_format(unsigned int w, unsigned int h, SceGxmTextureFormat format);
-vita2d_texture *vita2d_create_empty_texture_rendertarget(unsigned int w, unsigned int h, SceGxmTextureFormat format);
-
-void vita2d_free_texture(vita2d_texture *texture);
-
-unsigned int vita2d_texture_get_width(const vita2d_texture *texture);
-unsigned int vita2d_texture_get_height(const vita2d_texture *texture);
-unsigned int vita2d_texture_get_stride(const vita2d_texture *texture);
-SceGxmTextureFormat vita2d_texture_get_format(const vita2d_texture *texture);
-void *vita2d_texture_get_datap(const vita2d_texture *texture);
-void *vita2d_texture_get_palette(const vita2d_texture *texture);
-SceGxmTextureFilter vita2d_texture_get_min_filter(const vita2d_texture *texture);
-SceGxmTextureFilter vita2d_texture_get_mag_filter(const vita2d_texture *texture);
-void vita2d_texture_set_filters(vita2d_texture *texture, SceGxmTextureFilter min_filter, SceGxmTextureFilter mag_filter);
-
-void vita2d_draw_texture_rotate(const vita2d_texture *texture, float x, float y, float rad);
-void vita2d_draw_texture_rotate_hotspot(const vita2d_texture *texture, float x, float y, float rad, float center_x, float center_y);
-void vita2d_draw_texture_scale(const vita2d_texture *texture, float x, float y, float x_scale, float y_scale);
-void vita2d_draw_texture_part(const vita2d_texture *texture, float x, float y, float tex_x, float tex_y, float tex_w, float tex_h);
-void vita2d_draw_texture_part_scale(const vita2d_texture *texture, float x, float y, float tex_x, float tex_y, float tex_w, float tex_h, float x_scale, float y_scale);
-void vita2d_draw_texture_scale_rotate_hotspot(const vita2d_texture *texture, float x, float y, float x_scale, float y_scale, float rad, float center_x, float center_y);
-void vita2d_draw_texture_scale_rotate(const vita2d_texture *texture, float x, float y, float x_scale, float y_scale, float rad);
-void vita2d_draw_texture_part_scale_rotate(const vita2d_texture *texture, float x, float y, float tex_x, float tex_y, float tex_w, float tex_h, float x_scale, float y_scale, float rad);
-
-void vita2d_draw_texture_tint(const vita2d_texture *texture, float x, float y, unsigned int color);
-void vita2d_draw_texture_tint_rotate(const vita2d_texture *texture, float x, float y, float rad, unsigned int color);
-
-vita2d_texture *vita2d_load_PNG_file(const char *filename);
-vita2d_texture *vita2d_load_PNG_buffer(const void *buffer);
-
-vita2d_texture *vita2d_load_JPEG_file(const char *filename);
-vita2d_texture *vita2d_load_JPEG_buffer(const void *buffer, unsigned long buffer_size);
-
-vita2d_texture *vita2d_load_BMP_file(const char *filename);
-vita2d_texture *vita2d_load_BMP_buffer(const void *buffer);
-
-// PGF functions are weak imports at the moment, they have to be resolved manually.
-vita2d_pgf *vita2d_load_system_pgf(int numFonts, const vita2d_system_pgf_config *configs);
-vita2d_pgf *vita2d_load_default_pgf();
-vita2d_pgf *vita2d_load_custom_pgf(const char *path);
-void vita2d_free_pgf(vita2d_pgf *font);
-int vita2d_pgf_draw_text(vita2d_pgf *font, int x, int y, unsigned int color, float scale, const char *text);
-int vita2d_pgf_draw_text_ls(vita2d_pgf *font, int x, int y, float linespace, unsigned int color, float scale, const char *text);
-int vita2d_pgf_draw_textf(vita2d_pgf *font, int x, int y, unsigned int color, float scale, const char *text, ...);
-int vita2d_pgf_draw_textf_ls(vita2d_pgf *font, int x, int y, float linespace, unsigned int color, float scale, const char *text, ...);
-void vita2d_pgf_text_dimensions(vita2d_pgf *font, float scale, const char *text, int *width, int *height);
-int vita2d_pgf_text_width(vita2d_pgf *font, float scale, const char *text);
-int vita2d_pgf_text_height(vita2d_pgf *font, float scale, const char *text);
-
-vita2d_pvf *vita2d_load_system_pvf(int numFonts, const vita2d_system_pvf_config *configs);
-vita2d_pvf *vita2d_load_default_pvf();
-vita2d_pvf *vita2d_load_custom_pvf(const char *path);
-void vita2d_free_pvf(vita2d_pvf *font);
-int vita2d_pvf_draw_text(vita2d_pvf *font, int x, int y, unsigned int color, float scale, const char *text);
-int vita2d_pvf_draw_textf(vita2d_pvf *font, int x, int y, unsigned int color, float scale, const char *text, ...);
-int vita2d_pvf_draw_text_ls(vita2d_pvf *font, int x, int y, float linespace, unsigned int color, float scale, const char *text);
-int vita2d_pvf_draw_textf_ls(vita2d_pvf *font, int x, int y, float linespace, unsigned int color, float scale, const char *text, ...);
-void vita2d_pvf_text_dimensions(vita2d_pvf *font, float scale, const char *text, int *width, int *height);
-int vita2d_pvf_text_width(vita2d_pvf *font, float scale, const char *text);
-int vita2d_pvf_text_height(vita2d_pvf *font, float scale, const char *text);
-
-*/
 
 void loadFont(const char *fontPath)
 {
@@ -265,7 +182,6 @@ float *getRefreshRate()
 void vitajs_error_screen(const char *errMsg)
 {
 	uint32_t color = RGBA8(0x20, 0x20, 0x20, 0xFF);
-	uint32_t color2 = RGBA8(0xFF, 0xFF, 0xFF, 0xFF);
 
 	if (errMsg != NULL)
 	{
@@ -304,12 +220,18 @@ void vitajs_error_screen(const char *errMsg)
 			color = RGBA8(0xE2, 0x61, 0x9F, 0xFF);
 		}
 
-		color2 = color;
-		color = RGBA8(0x20, 0x20, 0x20, 0xFF);
+		while (ctrl.buttons != SCE_CTRL_START)
+		{
+			start_drawing();
+			clearScreen();
 
-		clearScreen();
-		printfFontText(20, 50, 25, color2, "VitaJS ERROR!");
-		printfFontText(20, 100, 16, color2, errMsg);
-		printfFontText(20, 350, 16, color2, "\nPress [start] to close the app.\n");
+			printfFontText(20, 50, 25, color, "VitaJS ERROR!");
+			printfFontText(20, 100, 16, color, errMsg);
+			printfFontText(20, 350, 16, color, "\nPress [start] to close the app.\n");
+			printf("erro\n");
+
+			end_drawing();
+			swap_buffers();
+		}
 	}
 }
