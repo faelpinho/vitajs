@@ -19,7 +19,7 @@ JSModuleDef *vitajs_screen_init(JSContext *ctx);
 const char *runScript(const char *script);
 
 static int qjs_handle_file(JSContext *ctx, const char *filename);
-static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename);
+static int qjs_handle_fh(JSContext *ctx, FILE *f, const char *filename);
 static int qjs_eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags);
 
 unsigned int get_used_memory();

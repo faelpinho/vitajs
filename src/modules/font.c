@@ -14,57 +14,44 @@ typedef struct FontData
 } FontData;
 
 static FontData fonts[MAX_FONTS];
+static int numFonts = 0;
 
-static int new_font(const vita2d_font *font)
+int new_font(vita2d_font *font)
 {
-    int id = -1;
+    if (numFonts >= MAX_FONTS)
+        return -1;
 
-    for (int i = 0; i < MAX_FONTS; i++)
-    {
-        if (fonts[i].id == -1 && !fonts[i].font)
-        {
-            fonts[i].id = i;
-            fonts[i].font = font;
-            id = i;
-            break;
-        }
-    }
+    int fontId = numFonts++;
+    printf("new_font(): created font id %i.\n", fontId);
+    fonts[fontId].id = fontId;
+    fonts[fontId].font = font;
 
-    return id;
+    return fontId;
 }
 
-static FontData get_font_data(int fontId)
+FontData get_font_data(int fontId)
 {
-    FontData data;
-    data.id = -1;
-    data.font = NULL;
+    FontData fontData;
+    fontData.id = -1;
+    fontData.font = NULL;
 
-    if (fontId < MAX_FONTS && fonts[fontId].id != -1 && fonts[fontId].font)
-    {
-        data.id = fonts[fontId].id;
-        data.font = fonts[fontId].font;
-    }
+    if (fontId < 0 || fontId >= numFonts)
+        return fontData;
 
-    return data;
+    return fonts[fontId];
 }
 
-static int del_font(int fontId)
+int del_font(int fontId)
 {
-    int ret = -1;
+    if (fontId < 0 || fontId >= numFonts)
+        return -1;
 
-    for (int i = 0; i < MAX_FONTS; i++)
-    {
-        if (fonts[i].id == fontId)
-        {
-            vita2d_free_font(fonts[i].font);
-            fonts[i].id = -1;
-            fonts[i].font = NULL;
-            ret = 0;
-            break;
-        }
-    }
+    printf("del_font(): free font id %i.\n", fontId);
+    vita2d_free_font(fonts[fontId].font);
+    fonts[fontId].id = -1;
+    fonts[fontId].font = NULL;
 
-    return ret;
+    return 0;
 }
 
 static JSValue vitajs_load_font_file(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
@@ -328,7 +315,7 @@ static const JSCFunctionListEntry module_funcs[] = {
     JS_CFUNC_DEF("load_custom_pvf", 1, vitajs_load_custom_pvf),
 };
 
-static int font_init(JSContext *ctx, JSModuleDef *m)
+static int module_init(JSContext *ctx, JSModuleDef *m)
 {
     for (int i = 0; i < MAX_FONTS; i++)
     {
@@ -339,7 +326,7 @@ static int font_init(JSContext *ctx, JSModuleDef *m)
     return JS_SetModuleExportList(ctx, m, module_funcs, countof(module_funcs));
 }
 
-JSModuleDef *vitajs_screen_init(JSContext *ctx)
+JSModuleDef *vitajs_font_init(JSContext *ctx)
 {
-    return vitajs_push_module(ctx, font_init, module_funcs, countof(module_funcs), "Font");
+    return vitajs_push_module(ctx, module_init, module_funcs, countof(module_funcs), "Font");
 }

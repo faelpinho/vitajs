@@ -220,6 +220,8 @@ void vitajs_error_screen(const char *errMsg)
 			color = RGBA8(0xE2, 0x61, 0x9F, 0xFF);
 		}
 
+		loadFont("app0:/assets/segoeui.ttf");
+
 		while (ctrl.buttons != SCE_CTRL_START)
 		{
 			start_drawing();
@@ -233,5 +235,7 @@ void vitajs_error_screen(const char *errMsg)
 			end_drawing();
 			swap_buffers();
 		}
+
+		freeFont();
 	}
 }

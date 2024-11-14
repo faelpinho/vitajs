@@ -46,6 +46,7 @@ add_executable(${PROJECT_NAME}
     src/modules/screen.c
     src/modules/system.c
     src/modules/pads.c
+    src/modules/font.c
     src/env.c
     src/graphics.c
     #src/taskman.c

@@ -19,31 +19,27 @@ int main(int argc, char *argv[])
 
     const char *errMsg = NULL;
 
-    uint32_t lastButtonState = 0;
-    uint32_t currentButtonState = 0;
+    // uint32_t lastButtonState = 0;
+    // uint32_t currentButtonState = 0;
 
-    uint32_t lastTime = sceKernelGetProcessTimeLow();
-    uint32_t currentTime = lastTime;
-    uint32_t deltaTime = 0;
+    // uint32_t lastTime = sceKernelGetProcessTimeLow();
+    // uint32_t currentTime = lastTime;
+    // uint32_t deltaTime = 0;
 
     printf("Starting VitaJS...\n");
 
     do
     {
         errMsg = runScript("app0:/assets/main.js");
-
-        if (strstr(errMsg, "System.exitVitaJS") != NULL)
-            break;
-
-        vitajs_error_screen(errMsg);
-
     } while (errMsg != NULL);
 
-    while (ctrl.buttons != SCE_CTRL_START)
+    vitajs_error_screen(errMsg);
+
+    do
     {
         sceCtrlPeekBufferPositive(0, &ctrl, 1);
-        printf('loop\n');
-    }
+        printf("loop\n");
+    } while (ctrl.buttons != SCE_CTRL_START);
 
     // freeFont();
     vita2d_fini();

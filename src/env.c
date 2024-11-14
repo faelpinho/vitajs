@@ -58,13 +58,13 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
     vitajs_system_init(ctx);
     vitajs_screen_init(ctx);
     vitajs_pads_init(ctx);
+    vitajs_font_init(ctx);
 
     /*
     vitajs_archive_init(ctx);
     vitajs_timer_init(ctx);
     vitajs_task_init(ctx);
     vitajs_sound_init(ctx);
-    vitajs_font_init(ctx);
     vitajs_camera_init(ctx);
     vitajs_network_init(ctx);
     */
@@ -108,7 +108,7 @@ const char *runScript(const char *script)
 
     int s = qjs_handle_file(ctx, script);
 
-    js_std_loop(ctx);
+    js_std_loop(ctx); // L153
 
     if (s < 0)
     {
@@ -139,24 +139,26 @@ const char *runScript(const char *script)
 
 static int qjs_handle_file(JSContext *ctx, const char *filename)
 {
-    SceUID *f = NULL;
+    FILE *f = NULL;
     int retval = -1;
 
-    f = sceIoOpen(filename, SCE_O_RDONLY, 0777);
+    f = fopen(filename, "r");
     if (!f)
     {
-        fprintf(stderr, "failed to open source file: %s\n", filename);
+        fprintf(stderr, "Error %0x%08X: failed to open source file: %s\n", f, filename);
         fflush(stderr);
         return retval;
     }
 
+    js_std_loop(ctx);
+
     retval = qjs_handle_fh(ctx, f, filename);
 
-    sceIoClose(f);
+    fclose(f);
     return retval;
 }
 
-static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
+static int qjs_handle_fh(JSContext *ctx, FILE *f, const char *filename)
 {
     printf("qjs_handle_fh: iniciado\n");
     char *buf = NULL;
@@ -213,7 +215,7 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
 
         avail = bufsz - bufoff;
 
-        size_t got = sceIoRead(f, (void *)(buf + bufoff), avail);
+        size_t got = fread((void *)(buf + bufoff), (size_t)1, avail, f);
 
         if (got == 0)
         {
@@ -232,12 +234,15 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
         "import * as System from 'System';\n"
         "import * as Screen from 'Screen';\n"
         "import * as Pads from 'Pads';\n"
+        "import * as Font from 'Font';\n"
 
         "globalThis.std = std;\n"
         "globalThis.os = os;\n"
         "globalThis.System = System;\n"
         "globalThis.Screen = Screen;\n"
-        "globalThis.Pads = Pads;\n";
+        "globalThis.Pads = Pads;\n"
+        "globalThis.Font = Font;\n"
+        "";
 
     rc = qjs_eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
 
@@ -259,6 +264,8 @@ static int qjs_handle_fh(JSContext *ctx, SceUID f, const char *filename)
     {
         return 0;
     }
+
+    return retval;
 }
 
 static int qjs_eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags)

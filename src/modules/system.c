@@ -301,7 +301,10 @@ static JSValue vitajs_getUsedVRam(JSContext *ctx, JSValue this_val, int argc, JS
 
 static JSValue vitajs_exit(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	return JS_ThrowInternalError(ctx, "System.exit");
+	if (argc != 0)
+		return JS_ThrowInternalError(ctx, "System.exitVitaJS");
+
+	return JS_UNDEFINED;
 }
 
 void recursive_mkdir(char *dir)

@@ -1,7 +1,7 @@
 
 let inc = 0;
 
-//let font = Font.load_font_file("app0:/assets/segoeui.ttf");
+let font = Font.load_font_file("app0:/assets/segoeui.ttf");
 
 const texture1 = Screen.load_png_file("app0:/assets/test1.png");
 
@@ -25,19 +25,24 @@ let interval = os.setInterval(() => {
         x += steps;
 
     Screen.start_drawing()
-    Screen.clear(0, 0, 0, 0) // rgba
+    Screen.clear(0, 50, 50, 0) // rgba
 
-    //Font.print(font, `Hello world menó! inc = ${inc++}`, 50, 50, 20) // font, str, x, y, sz, r, g, b, a.
+    //console.log(font)
+
+    //font.print(font, `Hello world menó! inc = ${inc++}`, 50, 50, 20) // font, str, x, y, sz, r, g, b, a.
+    // ^ dando erro na linha 30. verificar se new_font (font.c) retorna a fonteId corretamente.
 
     Screen.draw_texture(texture1, x, y)
 
     Screen.end_drawing()
     Screen.swap_buffers()
-    Screen.wait_vblank()
 
     if (pads.check(pads.START) || pads.check(pads.POWER)) {
         console.log('Closing app...\n'); // show the message on stdout.
 
         os.clearInterval(interval); // it closes the app.
+
+        System.exit();
+        return;
     }
 }, 0);
