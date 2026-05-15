@@ -36,7 +36,12 @@ let interval = os.setInterval(() => {
 
 ![screenshot 2](test2-2024-11-14_02-28-32.gif)
 
-
 1st test: hello world!
 
 ![screenshot 1](screenshot01.png)
+
+Thanks to:
+
+[AthenaEnv Team](https://github.com/DanielSant0s/AthenaEnv) 
+
+[@DanielSant0s](https://github.com/DanielSant0s)
