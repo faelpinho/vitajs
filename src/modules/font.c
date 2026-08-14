@@ -140,7 +140,7 @@ static JSValue vitajs_font_draw_text_ls(JSContext *ctx, JSValue this_val, int ar
 
     JS_ToInt32(ctx, &x, argv[1]);
     JS_ToInt32(ctx, &y, argv[2]);
-    JS_ToFloat64(ctx, &linespace, argv[3]);
+    JS_ToFloat32(ctx, &linespace, argv[3]);
     JS_ToUint32(ctx, &color, argv[4]);
     JS_ToUint32(ctx, &size, argv[5]);
     text = JS_ToCString(ctx, argv[6]);

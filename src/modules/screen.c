@@ -132,33 +132,7 @@ static JSValue vitajs_wait_vblank_start(JSContext *ctx, JSValue this_val, int ar
 
 static JSValue vitajs_print(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	if (argc < 2)
-		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected at least two (textureId: number, str: string, x, y, size, r, g, b, a: number)");
-
-	const char *str;
-	uint32_t x = 10, y = 10, s = 20, r = 200, g, b, a;
-	int textureId = 0;
-
-	JS_ToUint32(ctx, textureId, argv[0]);
-	str = JS_ToCStringLen2(ctx, NULL, argv[1], 0);
-	JS_ToUint32(ctx, x, argv[2]);
-	JS_ToUint32(ctx, y, argv[3]);
-	JS_ToUint32(ctx, s, argv[4]);
-	JS_ToUint32(ctx, r, argv[5]);
-	JS_ToUint32(ctx, g, argv[6]);
-	JS_ToUint32(ctx, b, argv[7]);
-	JS_ToUint32(ctx, a, argv[8]);
-
-	if (textureId < 0 || textureId >= numTextures)
-		return JS_ThrowRangeError(ctx, "textureId must be greater than 0 and lesser than %i.", MAX_TEXTURES);
-
-	TextureData textureData = get_texture(textureId);
-
-	if (!textureData.texture)
-		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureData.id);
-
-	vita2d_font_draw_text(textureData.texture, x, y, RGBA8(r, g, b, a), s, str);
-	return JS_UNDEFINED;
+	return JS_ThrowInternalError(ctx, "Screen.print is currently unavailable.");
 }
 
 static JSValue vitajs_gmx_get_context(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
@@ -327,7 +301,7 @@ static JSValue vitajs_draw_fill_circle(JSContext *ctx, JSValue this_val, int arg
 
 	uint32_t x, y, color = 0;
 	float radius = 0;
-	JS_ToUint32(ctx, &radius, argv[0]);
+	JS_ToFloat32(ctx, &radius, argv[0]);
 	JS_ToUint32(ctx, &x, argv[1]);
 	JS_ToUint32(ctx, &y, argv[2]);
 	JS_ToUint32(ctx, &color, argv[3]);
@@ -343,28 +317,7 @@ static JSValue vitajs_draw_fill_circle(JSContext *ctx, JSValue this_val, int arg
 
 static JSValue vitajs_draw_array1(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
 {
-	if (argc != 6)
-		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected six (mode: SceGxmPrimitiveType, x, y, z, color, count: number)");
-
-	SceGxmPrimitiveType mode = SCE_GXM_PRIMITIVE_TRIANGLES;
-	const vita2d_color_vertex *vertices;
-	uint32_t count = 0;
-	JS_ToUint32(ctx, &mode, argv[0]);
-	JS_ToUint32(ctx, &vertices->x, argv[1]);
-	JS_ToUint32(ctx, &vertices->y, argv[2]);
-	JS_ToUint32(ctx, &vertices->z, argv[3]);
-	JS_ToUint32(ctx, &vertices->color, argv[4]);
-	JS_ToUint32(ctx, count, argv[5]);
-
-	vita2d_draw_array(mode, vertices, count);
-
-	JS_FreeValue(ctx, argv[0]);
-	JS_FreeValue(ctx, argv[1]);
-	JS_FreeValue(ctx, argv[2]);
-	JS_FreeValue(ctx, argv[3]);
-	JS_FreeValue(ctx, argv[4]);
-	JS_FreeValue(ctx, argv[5]);
-	return JS_UNDEFINED;
+	return JS_ThrowInternalError(ctx, "Screen.draw_array1 is currently unavailable.");
 }
 
 static JSValue vitajs_draw_array2(JSContext *ctx, JSValue this_val, int argc, JSValueConst *argv)
@@ -667,7 +620,7 @@ static JSValue vitajs_draw_texture(JSContext *ctx, JSValue this_val, int argc, J
 	if (argc != 3)
 		return JS_ThrowSyntaxError(ctx, "wrong number of arguments. Expected three (textureId: number, x, y: number)");
 
-	int *textureId = 0;
+	uint32_t textureId = 0;
 
 	JS_ToUint32(ctx, &textureId, argv[0]);
 	JS_FreeValue(ctx, argv[0]);
@@ -709,9 +662,9 @@ static JSValue vitajs_draw_texture_rotate(JSContext *ctx, JSValue this_val, int 
 		return JS_ThrowInternalError(ctx, "trying to access a null texture, id %i.", textureId);
 
 	float x, y, rad;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &rad, argv[3]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &rad, argv[3]);
 
 	vita2d_draw_texture_rotate(textures[textureId].texture, x, y, rad);
 
@@ -739,11 +692,11 @@ static JSValue vitajs_draw_texture_tint_rotate_hotspot(JSContext *ctx, JSValue t
 
 	float x, y, rad, center_x, center_y;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &rad, argv[3]);
-	JS_ToFloat64(ctx, &center_x, argv[4]);
-	JS_ToFloat64(ctx, &center_y, argv[5]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &rad, argv[3]);
+	JS_ToFloat32(ctx, &center_x, argv[4]);
+	JS_ToFloat32(ctx, &center_y, argv[5]);
 	JS_ToUint32(ctx, &color, argv[6]);
 
 	vita2d_draw_texture_tint_rotate_hotspot(textures[textureId].texture, x, y, rad, center_x, center_y, color);
@@ -775,10 +728,10 @@ static JSValue vitajs_draw_texture_tint_scale(JSContext *ctx, JSValue this_val, 
 
 	float x, y, x_scale, y_scale;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &x_scale, argv[3]);
-	JS_ToFloat64(ctx, &y_scale, argv[4]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &x_scale, argv[3]);
+	JS_ToFloat32(ctx, &y_scale, argv[4]);
 	JS_ToUint32(ctx, &color, argv[5]);
 
 	vita2d_draw_texture_tint_scale(textures[textureId].texture, x, y, x_scale, y_scale, color);
@@ -809,12 +762,12 @@ static JSValue vitajs_draw_texture_tint_part(JSContext *ctx, JSValue this_val, i
 
 	float x, y, tex_x, tex_y, tex_w, tex_h;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &tex_x, argv[3]);
-	JS_ToFloat64(ctx, &tex_y, argv[4]);
-	JS_ToFloat64(ctx, &tex_w, argv[5]);
-	JS_ToFloat64(ctx, &tex_h, argv[6]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &tex_x, argv[3]);
+	JS_ToFloat32(ctx, &tex_y, argv[4]);
+	JS_ToFloat32(ctx, &tex_w, argv[5]);
+	JS_ToFloat32(ctx, &tex_h, argv[6]);
 	JS_ToUint32(ctx, &color, argv[7]);
 
 	vita2d_draw_texture_tint_part(textures[textureId].texture, x, y, tex_x, tex_y, tex_w, tex_h, color);
@@ -847,14 +800,14 @@ static JSValue vitajs_draw_texture_tint_part_scale(JSContext *ctx, JSValue this_
 
 	float x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &tex_x, argv[3]);
-	JS_ToFloat64(ctx, &tex_y, argv[4]);
-	JS_ToFloat64(ctx, &tex_w, argv[5]);
-	JS_ToFloat64(ctx, &tex_h, argv[6]);
-	JS_ToFloat64(ctx, &x_scale, argv[7]);
-	JS_ToFloat64(ctx, &y_scale, argv[8]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &tex_x, argv[3]);
+	JS_ToFloat32(ctx, &tex_y, argv[4]);
+	JS_ToFloat32(ctx, &tex_w, argv[5]);
+	JS_ToFloat32(ctx, &tex_h, argv[6]);
+	JS_ToFloat32(ctx, &x_scale, argv[7]);
+	JS_ToFloat32(ctx, &y_scale, argv[8]);
 	JS_ToUint32(ctx, &color, argv[9]);
 
 	vita2d_draw_texture_tint_part_scale(textures[textureId].texture, x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale, color);
@@ -889,13 +842,13 @@ static JSValue vitajs_draw_texture_tint_scale_rotate_hotspot(JSContext *ctx, JSV
 
 	float x, y, x_scale, y_scale, rad, center_x, center_y;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &x_scale, argv[3]);
-	JS_ToFloat64(ctx, &y_scale, argv[4]);
-	JS_ToFloat64(ctx, &rad, argv[5]);
-	JS_ToFloat64(ctx, &center_x, argv[6]);
-	JS_ToFloat64(ctx, &center_y, argv[7]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &x_scale, argv[3]);
+	JS_ToFloat32(ctx, &y_scale, argv[4]);
+	JS_ToFloat32(ctx, &rad, argv[5]);
+	JS_ToFloat32(ctx, &center_x, argv[6]);
+	JS_ToFloat32(ctx, &center_y, argv[7]);
 	JS_ToUint32(ctx, &color, argv[8]);
 
 	vita2d_draw_texture_tint_scale_rotate_hotspot(textures[textureId].texture, x, y, x_scale, y_scale, rad, center_x, center_y, color);
@@ -929,11 +882,11 @@ static JSValue vitajs_draw_texture_tint_scale_rotate(JSContext *ctx, JSValue thi
 
 	float x, y, x_scale, y_scale, rad;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &x_scale, argv[3]);
-	JS_ToFloat64(ctx, &y_scale, argv[4]);
-	JS_ToFloat64(ctx, &rad, argv[5]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &x_scale, argv[3]);
+	JS_ToFloat32(ctx, &y_scale, argv[4]);
+	JS_ToFloat32(ctx, &rad, argv[5]);
 	JS_ToUint32(ctx, &color, argv[6]);
 
 	vita2d_draw_texture_tint_scale_rotate(textures[textureId].texture, x, y, x_scale, y_scale, rad, color);
@@ -965,15 +918,15 @@ static JSValue vitajs_draw_texture_part_tint_scale_rotate(JSContext *ctx, JSValu
 
 	float x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale, rad;
 	unsigned int color;
-	JS_ToFloat64(ctx, &x, argv[1]);
-	JS_ToFloat64(ctx, &y, argv[2]);
-	JS_ToFloat64(ctx, &tex_x, argv[3]);
-	JS_ToFloat64(ctx, &tex_y, argv[4]);
-	JS_ToFloat64(ctx, &tex_w, argv[5]);
-	JS_ToFloat64(ctx, &tex_h, argv[6]);
-	JS_ToFloat64(ctx, &x_scale, argv[7]);
-	JS_ToFloat64(ctx, &y_scale, argv[8]);
-	JS_ToFloat64(ctx, &rad, argv[9]);
+	JS_ToFloat32(ctx, &x, argv[1]);
+	JS_ToFloat32(ctx, &y, argv[2]);
+	JS_ToFloat32(ctx, &tex_x, argv[3]);
+	JS_ToFloat32(ctx, &tex_y, argv[4]);
+	JS_ToFloat32(ctx, &tex_w, argv[5]);
+	JS_ToFloat32(ctx, &tex_h, argv[6]);
+	JS_ToFloat32(ctx, &x_scale, argv[7]);
+	JS_ToFloat32(ctx, &y_scale, argv[8]);
+	JS_ToFloat32(ctx, &rad, argv[9]);
 	JS_ToUint32(ctx, &color, argv[10]);
 
 	vita2d_draw_texture_part_tint_scale_rotate(textures[textureId].texture, x, y, tex_x, tex_y, tex_w, tex_h, x_scale, y_scale, rad, color);
