@@ -1,7 +1,7 @@
 
 let inc = 0;
 
-let font = Font.load_font_file("app0:/assets/segoeui.ttf");
+// let font = Font.load_font_file("app0:/assets/segoeui.ttf");
 
 const texture1 = Screen.load_png_file("app0:/assets/test1.png");
 
