@@ -50,6 +50,11 @@
 #include "list.h"
 #include "quickjs.h"
 #include "libregexp.h"
+
+#ifndef CONFIG_VERSION
+#define CONFIG_VERSION "vitajs"
+#endif
+
 #ifdef CONFIG_BIGNUM
 #include "libbf.h"
 #endif

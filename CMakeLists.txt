@@ -28,7 +28,7 @@ set(VITA_VERSION  "01.00")
 
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-all -Wno-int-conversion -DCONFIG_VERSION=\"$(shell cat VERSION)\" -DPATH_MAX=256")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-all -Wno-int-conversion -DPATH_MAX=256")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 # Add any additional include paths here
