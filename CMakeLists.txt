@@ -11,9 +11,7 @@ endif()
 # Name of the project
 set(SHORT_NAME vitajs)
 
-
 project(${SHORT_NAME})
-
 # This line adds Vita helper macros, must go after project definition in order to build Vita specific artifacts (self/vpk).
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
@@ -29,7 +27,6 @@ set(VITA_VERSION  "01.00")
 ## Flags and includes for building
 # Note that we make sure not to overwrite previous flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu17 -Wno-all -Wno-int-conversion -DPATH_MAX=256")
-
 
 # Read the version directly from the upstream QuickJS directory.
 # Expected after this upgrade: 2026-06-04.
@@ -47,8 +44,6 @@ include_directories(
     src/assets
     quickjs
 )
-
-# Add any additional library paths here
 
 ## Build and link
 # Native VitaJS modules are discovered automatically.
@@ -88,6 +83,13 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS "-O2 -fwrapv"
 )
 
+# The audio callback/mixer is real-time code on a 444 MHz ARM CPU.
+# Build this module optimized even when the rest of the project is a debug/default build.
+set_source_files_properties(
+    src/modules/audio.c
+    PROPERTIES COMPILE_FLAGS "-O2"
+)
+
 # Library to link to (drop the -l prefix). This will mostly be stubs.
 # NOTE: png[lib] should stay BEFORE z[lib] here.
 target_link_libraries(${PROJECT_NAME}
@@ -111,7 +113,6 @@ target_link_libraries(${PROJECT_NAME}
     SceNetCtl_stub
     SceHttp_stub
     SceAudio_stub
-
     freetype
     png
     jpeg
@@ -120,8 +121,8 @@ target_link_libraries(${PROJECT_NAME}
     c
     m
     pthread
-	vorbisidec
-	ogg
+    vorbisidec
+    ogg
 )
 
 ## Create Vita files
@@ -132,7 +133,7 @@ vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
 vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
     VERSION ${VITA_VERSION}
     NAME ${VITA_APP_NAME}
-    FILE  
+    FILE
           src/assets/segoeui.ttf assets/segoeui.ttf
           src/assets/vitajs.d.ts assets/vitajs.d.ts
           src/assets/main.js assets/main.js

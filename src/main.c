@@ -1,30 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <psp2/ctrl.h>
 #include <psp2/kernel/threadmgr.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/kernel/clib.h>
 #include <vita2d.h>
 #include <vitasdk.h>
 #include <stdbool.h>
+
 #include "common/debugScreen.h"
 #include "env.h"
 #include "graphics.h"
 
+/*
+ * CommonDialog/AppUtil must be initialized before vita2d/GXM on real hardware.
+ * The implementations live in src/modules/dialog.c.
+ */
+int vitajs_dialog_system_init(void);
+void vitajs_dialog_system_shutdown(void);
+
 int main(int argc, char *argv[])
 {
-    vita2d_init();
-    printf("graphics initialized.");
+    (void)argc;
+    (void)argv;
+
+    int dialog_result = vitajs_dialog_system_init();
+    if (dialog_result < 0)
+    {
+        printf("CommonDialog/AppUtil init failed: 0x%08X\n", (unsigned int)dialog_result);
+        return dialog_result;
+    }
+
+    int graphics_result = vita2d_init();
+    if (graphics_result < 0)
+    {
+        printf("vita2d_init failed: 0x%08X\n", (unsigned int)graphics_result);
+        vitajs_dialog_system_shutdown();
+        return graphics_result;
+    }
+
+    printf("graphics initialized.\n");
 
     const char *errMsg = NULL;
-
-    // uint32_t lastButtonState = 0;
-    // uint32_t currentButtonState = 0;
-
-    // uint32_t lastTime = sceKernelGetProcessTimeLow();
-    // uint32_t currentTime = lastTime;
-    // uint32_t deltaTime = 0;
 
     printf("Starting VitaJS...\n");
 
@@ -35,12 +52,13 @@ int main(int argc, char *argv[])
 
     vitajs_error_screen(errMsg);
 
-    do{
+    do
+    {
         sceCtrlPeekBufferPositive(0, &ctrl, 1);
     } while (ctrl.buttons != SCE_CTRL_START);
 
-    // freeFont();
     vita2d_fini();
+    vitajs_dialog_system_shutdown();
 
     return 0;
 }

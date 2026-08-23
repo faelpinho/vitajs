@@ -159,7 +159,6 @@ function openKeyboard() {
 }
 
 function showBatteryDialog() {
-    refreshPower(true);
 
     if (!quickPower || !clocks) {
         openMessage(
@@ -170,15 +169,15 @@ function showBatteryDialog() {
         return;
     }
 
-    const message =
-        "Battery: " + quickPower.percent + "%\n" +
-        "Charging: " + (quickPower.charging ? "yes" : "no") + "\n" +
-        "AC: " + (quickPower.pluggedIn ? "connected" : "disconnected") + "\n" +
-        "Low battery: " + (quickPower.low ? "yes" : "no") + "\n\n" +
-        "CPU: " + clocks.cpu + " MHz\n" +
-        "BUS: " + clocks.bus + " MHz\n" +
-        "GPU: " + clocks.gpu + " MHz\n" +
-        "GPU XBAR: " + clocks.gpuXbar + " MHz";
+    const message = `
+		Battery: ${quickPower.percent}%
+		Charging: ${quickPower.charging ? "yes" : "no"}
+		AC: ${quickPower.pluggedIn ? "connected" : "disconnected"}
+		Low: ${quickPower.low ? "yes" : "no"}
+		CPU: ${clocks.cpu} MHz
+		BUS: ${clocks.bus} MHz
+		GPU: ${clocks.gpu} MHz XBAR: ${clocks.gpuXbar} MHz
+		`.trim();
 
     openMessage("batteryInfo", message, "ok");
 }
@@ -257,13 +256,15 @@ function updateNativeDialog() {
         return;
     }
 
-    // Dialog.update() performs vita2d_common_dialog_update().
-    // Keep it between Screen.end_drawing() and Screen.swap_buffers().
-    const status = Dialog.update();
+    try {
+        const status = Dialog.update();
 
-    if (status === "finished") {
-        const result = Dialog.result();
-        handleDialogResult(result);
+        if (status === "finished") {
+            const result = Dialog.result();
+            handleDialogResult(result);
+        }
+    } catch (error) {
+        statusMessage = "Dialog.update: " + error;
     }
 }
 

@@ -1,15 +1,73 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../graphics.h"
 #include "../env.h"
 
+/*
+ * libvita2d stores glyphs in a font-local atlas keyed only by glyph index.
+ * If one vita2d_font instance is used with multiple pixel sizes, a glyph
+ * rasterized for the first requested size can later be scaled for another
+ * size. This is especially visible on small UI text.
+ *
+ * VitaJS works around that behavior without modifying libvita2d itself:
+ * every requested pixel size gets its own vita2d_font instance and therefore
+ * its own glyph atlas.
+ *
+ * Public JavaScript API stays unchanged:
+ *
+ *   const font = Font.load_font_file("app0:/assets/font.ttf");
+ *   Font.font_draw_text(font, x, y, color, 18, "Small");
+ *   Font.font_draw_text(font, x, y, color, 34, "Large");
+ *
+ * Internally those two calls use two independent vita2d_font instances.
+ */
+
+typedef struct FontSizeCache
+{
+    uint32_t size;
+    vita2d_font *font;
+    struct FontSizeCache *next;
+} FontSizeCache;
+
 typedef struct FontData
 {
-    vita2d_font *font;
+    char *filename;
+    FontSizeCache *sizes;
 } FontData;
 
 static JSClassID js_font_class_id = 0;
+
+static void vitajs_free_font_cache(JSRuntime *rt, FontData *data)
+{
+    if (!data)
+        return;
+
+    FontSizeCache *entry = data->sizes;
+
+    while (entry)
+    {
+        FontSizeCache *next = entry->next;
+
+        if (entry->font)
+        {
+            vita2d_free_font(entry->font);
+            entry->font = NULL;
+        }
+
+        js_free_rt(rt, entry);
+        entry = next;
+    }
+
+    data->sizes = NULL;
+
+    if (data->filename)
+    {
+        js_free_rt(rt, data->filename);
+        data->filename = NULL;
+    }
+}
 
 static void vitajs_font_finalizer(JSRuntime *rt, JSValue val)
 {
@@ -18,12 +76,7 @@ static void vitajs_font_finalizer(JSRuntime *rt, JSValue val)
     if (!data)
         return;
 
-    if (data->font)
-    {
-        vita2d_free_font(data->font);
-        data->font = NULL;
-    }
-
+    vitajs_free_font_cache(rt, data);
     js_free_rt(rt, data);
 }
 
@@ -39,13 +92,62 @@ static FontData *vitajs_get_font_data(JSContext *ctx, JSValueConst value)
     if (!data)
         return NULL;
 
-    if (!data->font)
+    if (!data->filename)
     {
         JS_ThrowTypeError(ctx, "Font has already been freed");
         return NULL;
     }
 
     return data;
+}
+
+/*
+ * Returns a vita2d_font dedicated to one exact pixel size.
+ * A new instance is created lazily the first time that size is used.
+ */
+static vita2d_font *vitajs_get_sized_font(
+    JSContext *ctx,
+    FontData *data,
+    uint32_t size)
+{
+    if (size == 0)
+    {
+        JS_ThrowRangeError(ctx, "Font size must be greater than zero");
+        return NULL;
+    }
+
+    FontSizeCache *entry = data->sizes;
+
+    while (entry)
+    {
+        if (entry->size == size)
+            return entry->font;
+
+        entry = entry->next;
+    }
+
+    entry = js_mallocz(ctx, sizeof(*entry));
+
+    if (!entry)
+        return NULL;
+
+    entry->font = vita2d_load_font_file(data->filename);
+
+    if (!entry->font)
+    {
+        js_free(ctx, entry);
+        JS_ThrowInternalError(
+            ctx,
+            "Unable to create font cache for size %u",
+            (unsigned int)size);
+        return NULL;
+    }
+
+    entry->size = size;
+    entry->next = data->sizes;
+    data->sizes = entry;
+
+    return entry->font;
 }
 
 static JSValue vitajs_load_font_file(
@@ -66,18 +168,25 @@ static JSValue vitajs_load_font_file(
     if (!filename)
         return JS_EXCEPTION;
 
-    vita2d_font *font = vita2d_load_font_file(filename);
+    /*
+     * Preserve the previous API behavior: invalid/unreadable font files fail
+     * immediately in load_font_file(), rather than on the first draw call.
+     */
+    vita2d_font *probe = vita2d_load_font_file(filename);
 
-    JS_FreeCString(ctx, filename);
-
-    if (!font)
+    if (!probe)
+    {
+        JS_FreeCString(ctx, filename);
         return JS_ThrowInternalError(ctx, "Unable to load font file");
+    }
+
+    vita2d_free_font(probe);
 
     JSValue obj = JS_NewObjectClass(ctx, js_font_class_id);
 
     if (JS_IsException(obj))
     {
-        vita2d_free_font(font);
+        JS_FreeCString(ctx, filename);
         return obj;
     }
 
@@ -85,12 +194,28 @@ static JSValue vitajs_load_font_file(
 
     if (!data)
     {
-        vita2d_free_font(font);
+        JS_FreeCString(ctx, filename);
         JS_FreeValue(ctx, obj);
         return JS_EXCEPTION;
     }
 
-    data->font = font;
+    size_t filename_len = strlen(filename);
+
+    data->filename = js_malloc(ctx, filename_len + 1);
+
+    if (!data->filename)
+    {
+        JS_FreeCString(ctx, filename);
+        js_free(ctx, data);
+        JS_FreeValue(ctx, obj);
+        return JS_EXCEPTION;
+    }
+
+    memcpy(data->filename, filename, filename_len + 1);
+    data->sizes = NULL;
+
+    JS_FreeCString(ctx, filename);
+
     JS_SetOpaque(obj, data);
 
     return obj;
@@ -114,10 +239,10 @@ static JSValue vitajs_free_font(
     if (!data)
         return JS_EXCEPTION;
 
-    if (data->font)
+    if (data->filename)
     {
-        vita2d_free_font(data->font);
-        data->font = NULL;
+        JSRuntime *rt = JS_GetRuntime(ctx);
+        vitajs_free_font_cache(rt, data);
     }
 
     /*
@@ -163,13 +288,18 @@ static JSValue vitajs_font_draw_text(
     if (JS_ToUint32(ctx, &size, argv[4]))
         return JS_EXCEPTION;
 
+    vita2d_font *font = vitajs_get_sized_font(ctx, data, size);
+
+    if (!font)
+        return JS_EXCEPTION;
+
     const char *text = JS_ToCString(ctx, argv[5]);
 
     if (!text)
         return JS_EXCEPTION;
 
     vita2d_font_draw_text(
-        data->font,
+        font,
         x,
         y,
         color,
@@ -220,13 +350,18 @@ static JSValue vitajs_font_draw_text_ls(
     if (JS_ToUint32(ctx, &size, argv[5]))
         return JS_EXCEPTION;
 
+    vita2d_font *font = vitajs_get_sized_font(ctx, data, size);
+
+    if (!font)
+        return JS_EXCEPTION;
+
     const char *text = JS_ToCString(ctx, argv[6]);
 
     if (!text)
         return JS_EXCEPTION;
 
     vita2d_font_draw_text_ls(
-        data->font,
+        font,
         x,
         y,
         line_space,
@@ -262,6 +397,11 @@ static JSValue vitajs_font_text_dimensions(
     if (JS_ToUint32(ctx, &size, argv[1]))
         return JS_EXCEPTION;
 
+    vita2d_font *font = vitajs_get_sized_font(ctx, data, size);
+
+    if (!font)
+        return JS_EXCEPTION;
+
     const char *text = JS_ToCString(ctx, argv[2]);
 
     if (!text)
@@ -271,7 +411,7 @@ static JSValue vitajs_font_text_dimensions(
     int height = 0;
 
     vita2d_font_text_dimensions(
-        data->font,
+        font,
         size,
         text,
         &width,
@@ -330,13 +470,18 @@ static JSValue vitajs_font_text_width(
     if (JS_ToUint32(ctx, &size, argv[1]))
         return JS_EXCEPTION;
 
+    vita2d_font *font = vitajs_get_sized_font(ctx, data, size);
+
+    if (!font)
+        return JS_EXCEPTION;
+
     const char *text = JS_ToCString(ctx, argv[2]);
 
     if (!text)
         return JS_EXCEPTION;
 
     int width = vita2d_font_text_width(
-        data->font,
+        font,
         size,
         text);
 
@@ -368,13 +513,18 @@ static JSValue vitajs_font_text_height(
     if (JS_ToUint32(ctx, &size, argv[1]))
         return JS_EXCEPTION;
 
+    vita2d_font *font = vitajs_get_sized_font(ctx, data, size);
+
+    if (!font)
+        return JS_EXCEPTION;
+
     const char *text = JS_ToCString(ctx, argv[2]);
 
     if (!text)
         return JS_EXCEPTION;
 
     int height = vita2d_font_text_height(
-        data->font,
+        font,
         size,
         text);
 
