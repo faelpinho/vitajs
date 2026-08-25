@@ -1,3 +1,9 @@
+Please, prefer to use AlphaSystemsPL's repo: https://github.com/AlphaSystemsPL/PSVitaJS
+
+Thank you for your support!
+
+---
+
 # vitajs
 
 A way to develop games with Javascript on PS Vita.
@@ -41,6 +47,10 @@ let interval = os.setInterval(() => {
 ![screenshot 1](screenshot01.png)
 
 Thanks to:
+
+[AlphaSystemsPL](https://github.com/AlphaSystemsPL/PSVitaJS) 
+
+VitaSDK contributors
 
 [AthenaEnv Team](https://github.com/DanielSant0s/AthenaEnv) 
 
