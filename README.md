@@ -1,4 +1,10 @@
-# VitaJS
+Please, prefer to use AlphaSystemsPL's repo: https://github.com/AlphaSystemsPL/PSVitaJS
+
+Thank you for your support!
+
+---
+
+# vitajs
 
 > VitaJS was originally created by faelpinho and is now actively developed and extended by AlphaSystemsPL.
 
