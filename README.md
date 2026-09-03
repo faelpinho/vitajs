@@ -14,6 +14,12 @@ It embeds **QuickJS 2026-06-04** and exposes native PS Vita / vita2d functionali
 
 > **Status:** work in progress. APIs may change. Always validate hardware-facing functionality on a real PS Vita — Vita3K can behave differently from physical hardware.
 
+## Screenshots
+
+| Native API demo | Mini-game example |
+| --- | --- |
+| ![VitaJS native API demo showing power and application information](docs/1.png) | ![VitaJS mini-game example](docs/2.png) |
+
 ## ⚡ Major QuickJS performance upgrade
 
 VitaJS has moved from **QuickJS 2021-03-27** to the **QuickJS 2026-06-04 core**.
@@ -128,6 +134,20 @@ API examples are kept in separate files under [`docs/`](docs/README.md).
 | [Timers](docs/timers.md) | `os.setInterval`, game loop and cleanup |
 
 The most complete API signature reference is [`src/assets/vitajs.d.ts`](src/assets/vitajs.d.ts).
+
+---
+
+## Using a prebuilt VPK
+
+If you only want to change the JavaScript application or its assets, you do not need to install VitaSDK or compile the entire project. A VPK is a ZIP-compatible archive, so you can use an existing VitaJS VPK as a ready-made runtime:
+
+1. Download or copy a prebuilt `vitajs.vpk`.
+2. Open or extract it with a ZIP-compatible archive tool.
+3. Replace `assets/main.js` and add any imported JavaScript modules, images, fonts or audio files under `assets/`.
+4. Repack the archive with its original directory structure and keep the `.vpk` extension. Files such as `eboot.bin`, `sce_sys/` and `assets/` must remain at the archive root, not inside an additional parent directory.
+5. Transfer the modified VPK to the console and install it with VitaShell.
+
+Compile the project only when you need to change the native C runtime, add native modules or update linked libraries. Every file imported or loaded by your application must still be included in the repacked VPK.
 
 ---
 
